@@ -13,6 +13,8 @@ import java.util.List;
 
 /**
  * A class for performing calculations for creating loan offers and scoring applications
+ * Formulas for calculation were taken from the site
+ * <a href="https://www.raiffeisen.ru/wiki/kak-rasschitat-procenty-po-kreditu/">...</a>
  * Used by {@link CreditServiceImpl} and {@link LoanOfferServiceImpl}
  */
 @Service
@@ -60,6 +62,10 @@ public class RateCalculator {
     }
     /**
      * Calculates the amount of the monthly payment depending on the amount of the loan, the term of the loan and the interest rate
+     * <br>
+     * Formula: monthlyPayment = amount * (monthlyRate*(1 + monthlyRate)^term)/((1 + monthlyRate)^term - 1)
+     * <br>
+     * where monthlyRate =  rate/12
      * @param amount
      * @param term loan term in months
      * @param rate
@@ -80,6 +86,8 @@ public class RateCalculator {
 
     /**
      * Calculates psk(Full loan cost) depending on the amount of the loan, the term of the loan and the interest rate
+     * <br>
+     * Formula: psk = (totalAmount/requestAmount - 1)/yearTerm
      * @param amount
      * @param term
      * @param rate
@@ -99,6 +107,15 @@ public class RateCalculator {
 
     /**
      * Calculates the loan payment schedule depending on the amount of the loan, the term of the loan and the interest rate
+     * <br>
+     * The amount of the monthly payment is calculated according to the formula above
+     * {@link #calculateMonthlyPayment(BigDecimal, Integer, BigDecimal)}
+     * <br>
+     * Monthly payment divided into two parts: the interest part and the debt part
+     * <br>
+     * interestPart = remainingDept*monthlyRate
+     * <br>
+     * deptPart = monthlyPayment - interestPart
      * @param amount
      * @param term
      * @param rate
