@@ -1,0 +1,142 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: brandonth
+      changes:
+        - createTable:
+            tableName: client
+            columns:
+              - column:
+                  name: client_id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: account
+                  type: varchar
+              - column:
+                  name: birth_date
+                  type: date
+              - column:
+                  name: dependent_amount
+                  type: int
+              - column:
+                  name: email
+                  type: varchar
+              - column:
+                  name: employment
+                  type: jsonb
+              - column:
+                  name: first_name
+                  type: varchar
+              - column:
+                  name: gender
+                  type: varchar
+              - column:
+                  name: last_name
+                  type: varchar
+              - column:
+                  name: marital_status
+                  type: varchar
+              - column:
+                  name: middle_name
+                  type: varchar
+              - column:
+                  name: passport
+                  type: jsonb
+
+  - changeSet:
+      id: 2
+      author: brandonth
+      changes:
+        - createTable:
+            tableName: credit
+            columns:
+              - column:
+                  name: credit_id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: amount
+                  type: decimal
+              - column:
+                  name: credit_status
+                  type: varchar
+              - column:
+                  name: insurance_enable
+                  type: boolean
+              - column:
+                  name: salary_client
+                  type: boolean
+              - column:
+                  name: monthly_payment
+                  type: decimal
+              - column:
+                  name: payment_schedule
+                  type: jsonb
+              - column:
+                  name: psk
+                  type: decimal
+              - column:
+                  name: rate
+                  type: decimal
+              - column:
+                  name: term
+                  type: int
+
+  -  changeSet:
+       id:  3
+       author:  brandonth
+       changes:
+         -  createTable:
+              tableName:  application
+              columns:
+                -  column:
+                     name:  application_id
+                     type:  bigint
+                     autoIncrement:  true
+                     constraints:
+                       primaryKey:  true
+                       nullable:  false
+                - column:
+                    name: applied_offer
+                    type: jsonb
+                - column:
+                    name: creation_date
+                    type: timestamp
+                - column:
+                    name: ses_code
+                    type: varchar
+                - column:
+                    name: sign_date
+                    type: timestamp
+                - column:
+                    name: status
+                    type: varchar
+                - column:
+                    name: status_history
+                    type: jsonb
+                - column:
+                    name: client_id
+                    type: bigint
+                    constraints:
+                      foreignKeyName: fk_application_client
+                      referencedTableName: client
+                      referencedColumnNames: client_id
+                - column:
+                    name: credit_id
+                    type: bigint
+                    constraints:
+                      foreignKeyName: fk_application_credit
+                      referencedTableName: credit
+                      referencedColumnNames: credit_id
+
+
+
+
+
