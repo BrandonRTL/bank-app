@@ -26,7 +26,7 @@ paths:
           description: Invalid input data
 
   /application/offer:
-    post:
+    put:
       summary: Choose offer
       operationId: Set offer
       requestBody:
