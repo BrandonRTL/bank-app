@@ -1,0 +1,154 @@
+openapi: '3.0.1'
+
+info:
+  version: '1.0.0'
+  title: 'My API title'
+  description: 'Awesome description'
+
+components:
+  schemas:
+    LoanOfferDTO:
+      type: object
+      properties:
+        applicationId:
+          type: integer
+          format: int64
+        requestedAmount:
+          type: number
+        totalAmount:
+          type: number
+        term:
+          type: integer
+        monthlyPayment:
+          type: number
+        rate:
+          type: number
+        isInsuranceEnabled:
+          type: boolean
+        isSalaryClient:
+          type: boolean
+
+    CreditDTO:
+      type: object
+      properties:
+        amount:
+          type: number
+        term:
+          type: integer
+        monthlyPayment:
+          type: number
+        rate:
+          type: number
+        psk:
+          type: number
+        isInsuranceEnabled:
+          type: boolean
+        isSalaryClient:
+          type: boolean
+        paymentSchedule:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaymentScheduleElement"
+
+    PaymentScheduleElement:
+      type: object
+      properties:
+        number:
+          type: integer
+        date:
+          type: string
+          format: date
+        totalPayment:
+          type: number
+        interestPayment:
+          type: number
+        debtPayment:
+          type: number
+        remainingDebt:
+          type: number
+
+    ApplicationDTO:
+      type: object
+      properties:
+        credit:
+          $ref: "#/components/schemas/CreditDTO"
+        appliedOffer:
+          $ref: "#/components/schemas/LoanOfferDTO"
+        sesCode:
+          type: string
+
+    EmailMessage:
+      type: object
+      properties:
+        address:
+          type: string
+        applicationId:
+          type: integer
+          format: int64
+        theme:
+          $ref: "#/components/schemas/EmailTheme"
+
+    EmailTheme:
+      type: string
+      enum:
+        - finish-registration
+        - create-documents
+        - send-documents
+        - send-ses
+        - credit-issued
+        - application-denied
+
+    Position:
+      type: string
+      enum:
+        - Default
+        - Middle manager
+        - Top manager
+
+    Gender:
+      type: string
+      enum:
+        - Male
+        - Female
+        - Nonbinary
+
+    EmploymentStatus:
+      type: string
+      enum:
+        - Business owner
+        - Self-employed
+        - Employed
+        - Unemployed
+
+    MaritalStatus:
+      type: string
+      enum:
+        - Married
+        - Divorced
+        - Single
+
+    CreditStatus:
+      type: string
+      enum:
+        - Calculated
+        - Issued
+
+    ApplicationStatus:
+      type: string
+      enum:
+        - Preapproval
+        - Approved
+        - CC_Denied
+        - CC-Approved
+        - Prepare documents
+        - Documents created
+        - Client denied
+        - Document signed
+        - Credit issued
+
+
+    ChangeType:
+      type: string
+      enum:
+        - Automatic
+        - Manual

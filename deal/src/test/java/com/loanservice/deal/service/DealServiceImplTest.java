@@ -2,15 +2,15 @@ package com.loanservice.deal.service;
 
 import com.loanservice.deal.exception.DataNotFoundException;
 import com.loanservice.deal.feign.ConveyorFeignClient;
+import com.loanservice.deal.kafka.KafkaProducer;
+import com.loanservice.deal.mapper.ApplicationMapper;
 import com.loanservice.deal.mapper.ClientMapper;
 import com.loanservice.deal.mapper.CreditMapper;
 import com.loanservice.deal.mapper.ScoringDataMapper;
 import com.loanservice.deal.model.Application;
+import com.loanservice.deal.model.Client;
 import com.loanservice.deal.model.Credit;
-import com.loanservice.deal.openapi.dto.CreditDTO;
-import com.loanservice.deal.openapi.dto.FinishRegistrationRequestDTO;
-import com.loanservice.deal.openapi.dto.LoanApplicationRequestDTO;
-import com.loanservice.deal.openapi.dto.LoanOfferDTO;
+import com.loanservice.deal.openapi.dto.*;
 import com.loanservice.deal.repository.ApplicationRepository;
 import com.loanservice.deal.repository.ClientRepository;
 import com.loanservice.deal.repository.CreditRepository;
@@ -24,6 +24,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 
+import javax.validation.constraints.Null;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +33,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
-class DealServiceImplImplTest {
+class DealServiceImplTest {
 
     @Mock
     private ConveyorFeignClient feignClient;
@@ -50,10 +51,16 @@ class DealServiceImplImplTest {
     private CreditMapper creditMapper;
 
     @Mock
+    private ApplicationMapper applicationMapper;
+
+    @Mock
     private ClientMapper clientMapper;
 
     @Mock
     private ScoringDataMapper scoringDataMapper;
+
+    @Mock
+    private KafkaProducer kafkaProducer;
 
     @InjectMocks
     private DealService dealServiceImpl;
@@ -81,6 +88,9 @@ class DealServiceImplImplTest {
     void testSaveOffer() {
         Application application = new Application();
         application.setStatusHistory(new ArrayList<>());
+        Client client = new Client();
+        client.setEmail("123@mail.com");
+        application.setClient(client);
         LoanOfferDTO offerDTO = new LoanOfferDTO().term(10);
         application.setAppliedOffer(offerDTO);
         Mockito.when(applicationRepository.findById(Mockito.any())).thenReturn(Optional.of(application));
@@ -100,6 +110,9 @@ class DealServiceImplImplTest {
     void testFinishRegistration() {
         Application application = new Application();
         application.setAppliedOffer(new LoanOfferDTO());
+        Client client = new Client();
+        client.setEmail("123@mail.com");
+        application.setClient(client);
         var finishReg = new FinishRegistrationRequestDTO();
         var creditDTO = new CreditDTO();
         var feignResponse = ResponseEntity.ok(creditDTO);
@@ -149,6 +162,80 @@ class DealServiceImplImplTest {
         assertThrows(DataNotFoundException.class, () ->
                 dealServiceImpl.saveOffer(offerDTO)
         );
+    }
 
+    @Test
+    void testGetApplicationDTOById() {
+        Application application = new Application();
+        application.setStatusHistory(new ArrayList<>());
+        Client client = new Client();
+        client.setEmail("123@mail.com");
+        application.setClient(client);
+        Mockito.when(applicationRepository.findById(Mockito.any())).thenReturn(Optional.of(application));
+
+        dealServiceImpl.getApplicationDTOById(1L);
+
+        Mockito.verify(applicationRepository, Mockito.times(1)).
+                findById(Mockito.any());
+        Mockito.verify(applicationMapper, Mockito.times(1)).
+                fromApplication(Mockito.any());
+    }
+
+    @Test
+    void testGenerateSesCode() {
+        Application application = new Application();
+        application.setStatusHistory(new ArrayList<>());
+        Client client = new Client();
+        client.setEmail("123@mail.com");
+        application.setClient(client);
+        Mockito.when(applicationRepository.findById(Mockito.any())).thenReturn(Optional.of(application));
+
+        dealServiceImpl.generateSesCode(1L);
+        assertNotEquals(null, application.getSesCode());
+    }
+
+    @Test
+    void testVerifySesCodeReturnsFalseIfIncorrectCode() {
+        Application application = new Application();
+        application.setStatusHistory(new ArrayList<>());
+        Client client = new Client();
+        client.setEmail("123@mail.com");
+        application.setClient(client);
+        application.setSesCode("1234");
+        Mockito.when(applicationRepository.findById(Mockito.any())).thenReturn(Optional.of(application));
+
+        Boolean flag = dealServiceImpl.verifySesCode(1L, "124");
+
+        assertEquals(false, flag);
+    }
+
+    @Test
+    void testVerifySesCodeReturnsTrueIfCorrectCode() {
+        Application application = new Application();
+        application.setStatusHistory(new ArrayList<>());
+        Client client = new Client();
+        client.setEmail("123@mail.com");
+        application.setClient(client);
+        application.setSesCode("1234");
+        Mockito.when(applicationRepository.findById(Mockito.any())).thenReturn(Optional.of(application));
+
+        Boolean flag = dealServiceImpl.verifySesCode(1L, "1234");
+
+        assertEquals(true, flag);
+    }
+
+    @Test
+    void updateStatus() {
+        Application application = new Application();
+        application.setStatusHistory(new ArrayList<>());
+        Client client = new Client();
+        client.setEmail("123@mail.com");
+        application.setClient(client);
+        application.setSesCode("1234");
+        Mockito.when(applicationRepository.findById(Mockito.any())).thenReturn(Optional.of(application));
+
+        dealServiceImpl.updateApplicationStatus(1L, ApplicationStatus.DOCUMENT_SIGNED);
+
+        assertEquals(1, application.getStatusHistory().size());
     }
 }

@@ -62,8 +62,99 @@ paths:
         400:
           description: Invalid input data
 
+  /deal/admin/application/{applicationId}:
+    get:
+      summary: Get application by id
+      operationId: get application
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationDTO'
+        400:
+          description: Invalid input data
 
+  /deal/admin/application/{applicationId}/status:
+    put:
+      summary: Update application status
+      operationId: update application
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: OK
+        400:
+          description: Invalid input data
 
+  /deal/document/{applicationId}/send:
+    put:
+      summary: Document request
+      operationId: send documents
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: OK
+        400:
+          description: Invalid input data
+
+  /deal/document/{applicationId}/sign:
+    put:
+      summary: Sign request
+      operationId: sign documents
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: OK
+        400:
+          description: Invalid input data
+
+  /deal/document/{applicationId}/code:
+    put:
+      summary: Code request
+      operationId: verify code
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SesCodeRequest'
+      responses:
+        200:
+          description: OK
+        400:
+          description: Invalid input data
 
 components:
   schemas:
@@ -252,6 +343,43 @@ components:
           type: number
         remainingDebt:
           type: number
+
+    ApplicationDTO:
+      type: object
+      properties:
+        credit:
+          $ref: "#/components/schemas/CreditDTO"
+        appliedOffer:
+          $ref: "#/components/schemas/LoanOfferDTO"
+        sesCode:
+          type: string
+
+    EmailMessage:
+      type: object
+      properties:
+        address:
+          type: string
+        applicationId:
+          type: integer
+          format: int64
+        theme:
+          $ref: "#/components/schemas/EmailTheme"
+
+    SesCodeRequest:
+      type: object
+      properties:
+        sesCode:
+          type: string
+
+    EmailTheme:
+      type: string
+      enum:
+        - finish-registration
+        - create-documents
+        - send-documents
+        - send-ses
+        - credit-issued
+        - application-denied
 
     Position:
       type: string
