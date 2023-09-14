@@ -1,6 +1,8 @@
 package com.loanservice.deal.service.impl;
 
 import com.loanservice.deal.exception.DataNotFoundException;
+import com.loanservice.deal.kafka.KafkaProducer;
+import com.loanservice.deal.mapper.ApplicationMapper;
 import com.loanservice.deal.model.Application;
 import com.loanservice.deal.model.ApplicationStatusHistory;
 import com.loanservice.deal.model.Client;
@@ -15,6 +17,7 @@ import com.loanservice.deal.mapper.ScoringDataMapper;
 import com.loanservice.deal.repository.CreditRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,7 +44,11 @@ public class DealService implements com.loanservice.deal.service.DealService {
 
     private final ClientMapper clientMapper;
 
+    private final ApplicationMapper applicationMapper;
+
     private final ScoringDataMapper scoringDataMapper;
+
+    private final KafkaProducer kafkaProducer;
 
     @Override
     public List<LoanOfferDTO> prescore(LoanApplicationRequestDTO loanApplicationRequestDTO) {
@@ -79,6 +86,12 @@ public class DealService implements com.loanservice.deal.service.DealService {
         application.get().getStatusHistory().add(statusHistoryDTO);
         application.get().setStatus(ApplicationStatus.APPROVED);
         var savedApplication = applicationRepository.save(application.get());
+
+        EmailMessage emailMessage = new EmailMessage();
+        emailMessage.setApplicationId(dto.getApplicationId());
+        emailMessage.setAddress(application.get().getClient().getEmail());
+        emailMessage.setTheme(EmailTheme.FINISH_REGISTRATION);
+        kafkaProducer.sendMessage(emailMessage);
         log.debug("Finished saving");
         return savedApplication;
     }
@@ -93,7 +106,6 @@ public class DealService implements com.loanservice.deal.service.DealService {
         if (application.get().getAppliedOffer() == null) {
             throw new DataNotFoundException("Application does not have offer");
         }
-        System.out.println(application.get().getAppliedOffer());
         Client client = application.get().getClient();
         client = clientMapper.updateRegistrationRequest(client, finishRegistrationRequestDTO);
         clientRepository.save(client);
@@ -106,8 +118,67 @@ public class DealService implements com.loanservice.deal.service.DealService {
         creditRepository.save(credit);
         application.get().setCredit(credit);
         var savedApplication = applicationRepository.save(application.get());
+
+        EmailMessage emailMessage = new EmailMessage();
+        emailMessage.setApplicationId(applicationId);
+        emailMessage.setAddress(application.get().getClient().getEmail());
+        emailMessage.setTheme(EmailTheme.CREATE_DOCUMENTS);
+        kafkaProducer.sendMessage(emailMessage);
         log.debug("Saved application: {}", savedApplication);
         return  savedApplication;
+    }
+
+    @Override
+    public ApplicationDTO getApplicationDTOById(Long applicationId) {
+        log.debug("Getting application by id {}", applicationId);
+        Optional<Application> application = applicationRepository.findById(applicationId);
+        if (application.isEmpty()) {
+            throw new DataNotFoundException("Application does not exist");
+        }
+        log.debug(application.toString());
+        return applicationMapper.fromApplication(application.get());
+    }
+
+    @Override
+    public void updateApplicationStatus(Long applicationId, ApplicationStatus applicationStatus) {
+        log.debug("Updating application with id {}", applicationId);
+        Optional<Application> application = applicationRepository.findById(applicationId);
+        if (application.isEmpty()) {
+            throw new DataNotFoundException("Application does not exist");
+        }
+        ApplicationStatusHistory statusHistoryDTO = ApplicationStatusHistory.builder()
+                .status(applicationStatus.getValue())
+                .timestamp(LocalDateTime.now())
+                .type(ChangeType.AUTOMATIC)
+                .build();
+        application.get().setStatus(applicationStatus);
+        application.get().getStatusHistory().add(statusHistoryDTO);
+        if (applicationStatus.equals(ApplicationStatus.DOCUMENT_SIGNED)) {
+            application.get().setSignDate(LocalDateTime.now());
+        }
+    }
+
+    @Override
+    public void generateSesCode(Long applicationId) {
+        log.info("Generating ses code for {}", applicationId);
+        Optional<Application> application = applicationRepository.findById(applicationId);
+        if (application.isEmpty()) {
+            throw new DataNotFoundException("Application does not exist");
+        }
+        String sesCode = RandomStringUtils.randomAlphabetic(10);
+        log.debug("Generated ses code: {}", sesCode);
+        application.get().setSesCode(sesCode);
+    }
+
+    @Override
+    public Boolean verifySesCode(Long applicationId, String sesCode) {
+        log.debug("Verifying ses code for {}", applicationId);
+        Optional<Application> application = applicationRepository.findById(applicationId);
+        if (application.isEmpty()) {
+            throw new DataNotFoundException("Application does not exist");
+        }
+        log.info("Input ses code: {}\n Generated ses code: {}", sesCode, application.get().getSesCode());
+        return application.get().getSesCode().equals(sesCode);
     }
 
     private ScoringDataDTO getScoringData(FinishRegistrationRequestDTO finishRegistrationRequestDTO,

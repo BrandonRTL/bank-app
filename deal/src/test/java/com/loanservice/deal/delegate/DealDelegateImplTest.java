@@ -1,9 +1,9 @@
 package com.loanservice.deal.delegate;
 
-import com.loanservice.deal.openapi.dto.FinishRegistrationRequestDTO;
-import com.loanservice.deal.openapi.dto.LoanApplicationRequestDTO;
-import com.loanservice.deal.openapi.dto.LoanOfferDTO;
+import com.loanservice.deal.openapi.dto.*;
+import com.loanservice.deal.service.KafkaService;
 import com.loanservice.deal.service.impl.DealService;
+import org.checkerframework.checker.units.qual.A;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -22,6 +22,9 @@ class DealDelegateImplTest {
 
     @Mock
     private DealService dealServiceImpl;
+
+    @Mock
+    private KafkaService kafkaService;
 
     @InjectMocks
     private DealDelegateImpl dealDelegate;
@@ -51,5 +54,62 @@ class DealDelegateImplTest {
         dealDelegate.finishRegistration(1L, requestDTO);
         Mockito.verify(dealServiceImpl, Mockito.times(1)).
                 finishRegistration(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    void testSendDocuments() {
+        dealDelegate.sendDocuments(1L);
+
+        Mockito.verify(dealServiceImpl, Mockito.times(1)).
+                updateApplicationStatus(1L, ApplicationStatus.PREPARE_DOCUMENTS);
+
+        Mockito.verify(kafkaService, Mockito.times(1)).
+                sendBasicMessage(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    void testSignDocuments() {
+        dealDelegate.signDocuments(1L);
+
+        Mockito.verify(dealServiceImpl, Mockito.times(1)).
+                generateSesCode(1L);
+
+        Mockito.verify(kafkaService, Mockito.times(1)).
+                sendBasicMessage(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    void testVerifyCodeCorrect() {
+        Mockito.when(dealServiceImpl.verifySesCode(Mockito.any(), Mockito.any())).thenReturn(true);
+
+        dealDelegate.verifyCode(1L, new SesCodeRequest());
+
+        Mockito.verify(dealServiceImpl, Mockito.times(1)).
+                updateApplicationStatus(Mockito.any(), Mockito.any());
+
+        Mockito.verify(kafkaService, Mockito.never()).
+                sendBasicMessage(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    void testVerifyCodeIncorrect() {
+        Mockito.when(dealServiceImpl.verifySesCode(Mockito.any(), Mockito.any())).thenReturn(false);
+
+        dealDelegate.verifyCode(1L, new SesCodeRequest());
+
+        Mockito.verify(dealServiceImpl, Mockito.never()).
+                updateApplicationStatus(Mockito.any(), Mockito.any());
+
+        Mockito.verify(kafkaService, Mockito.times(1)).
+                sendBasicMessage(Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    void testGetApplicationById() {
+        ApplicationDTO applicationDTO = new ApplicationDTO();
+        Mockito.when(dealServiceImpl.getApplicationDTOById(Mockito.any())).thenReturn(applicationDTO);
+
+        var res = dealDelegate.getApplication(1L);
+        assertEquals(applicationDTO, res.getBody());
     }
 }

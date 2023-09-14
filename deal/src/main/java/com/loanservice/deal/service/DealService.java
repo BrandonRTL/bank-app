@@ -1,9 +1,7 @@
 package com.loanservice.deal.service;
 
 import com.loanservice.deal.model.Application;
-import com.loanservice.deal.openapi.dto.FinishRegistrationRequestDTO;
-import com.loanservice.deal.openapi.dto.LoanApplicationRequestDTO;
-import com.loanservice.deal.openapi.dto.LoanOfferDTO;
+import com.loanservice.deal.openapi.dto.*;
 
 import java.util.List;
 
@@ -16,4 +14,11 @@ public interface DealService {
     Application finishRegistration(Long applicationId,
                                    FinishRegistrationRequestDTO finishRegistrationRequestDTO);
 
+    ApplicationDTO getApplicationDTOById(Long applicationId);
+
+    void updateApplicationStatus(Long applicationId, ApplicationStatus applicationStatus);
+
+    void generateSesCode(Long applicationId);
+
+    Boolean verifySesCode(Long applicationId, String sesCode);
 }

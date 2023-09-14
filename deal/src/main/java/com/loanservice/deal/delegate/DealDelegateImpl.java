@@ -2,10 +2,10 @@ package com.loanservice.deal.delegate;
 
 
 import com.loanservice.deal.openapi.api.DealApiDelegate;
-import com.loanservice.deal.openapi.dto.FinishRegistrationRequestDTO;
-import com.loanservice.deal.openapi.dto.LoanApplicationRequestDTO;
-import com.loanservice.deal.openapi.dto.LoanOfferDTO;
+import com.loanservice.deal.openapi.dto.*;
 import com.loanservice.deal.service.DealService;
+import com.loanservice.deal.service.KafkaService;
+import com.loanservice.deal.service.impl.KafkaServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +23,8 @@ import java.util.List;
 public class DealDelegateImpl implements DealApiDelegate {
 
     private final DealService dealService;
+
+    private final KafkaService kafkaService;
 
     /**
      * POST /deal/application : Get 4 loan offers from conveyor service
@@ -69,6 +71,52 @@ public class DealDelegateImpl implements DealApiDelegate {
         log.info("Finish registration. Input data: {}", finishRegistrationRequestDTO);
         dealService.finishRegistration(applicationId, finishRegistrationRequestDTO);
         log.info("Registration finished.");
+        return ResponseEntity.ok().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> sendDocuments(Long applicationId) {
+        log.info("Sending send document request");
+        dealService.updateApplicationStatus(applicationId, ApplicationStatus.PREPARE_DOCUMENTS);
+        kafkaService.sendBasicMessage(applicationId, EmailTheme.SEND_DOCUMENTS);
+        log.info("Request sent");
+        return ResponseEntity.ok().build();
+    }
+
+
+    @Override
+    public ResponseEntity<Void> signDocuments(Long applicationId) {
+        log.info("Sending sign document request");
+        dealService.generateSesCode(applicationId);
+        kafkaService.sendBasicMessage(applicationId, EmailTheme.SEND_SES);
+        log.info("Request sent");
+        return ResponseEntity.ok().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> verifyCode(Long applicationId, SesCodeRequest sesCodeRequest) {
+        log.info("Verifying ses code {}", sesCodeRequest.getSesCode());
+        if (!dealService.verifySesCode(applicationId, sesCodeRequest.getSesCode())) {
+            kafkaService.sendBasicMessage(applicationId, EmailTheme.CREDIT_ISSUED);
+        } else {
+            dealService.updateApplicationStatus(applicationId, ApplicationStatus.DOCUMENT_SIGNED);
+
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    @Override
+    public ResponseEntity<ApplicationDTO> getApplication(Long applicationId) {
+        log.info("Get application with id {}", applicationId);
+        var application = dealService.getApplicationDTOById(applicationId);
+        log.info(application.toString());
+        return ResponseEntity.ok(application);
+    }
+
+    @Override
+    public ResponseEntity<Void> updateApplication(Long applicationId) {
+        log.info("Start updating application with id {}", applicationId);
+        dealService.updateApplicationStatus(applicationId, ApplicationStatus.DOCUMENTS_CREATED);
         return ResponseEntity.ok().build();
     }
 }
