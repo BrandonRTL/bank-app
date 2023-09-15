@@ -114,9 +114,17 @@ public class DealDelegateImpl implements DealApiDelegate {
     }
 
     @Override
+    public ResponseEntity<List<ApplicationDTO>> getApplications() {
+        log.info("Get applications");
+        return ResponseEntity.ok(dealService.getApplication());
+    }
+
+    @Override
     public ResponseEntity<Void> updateApplication(Long applicationId) {
         log.info("Start updating application with id {}", applicationId);
         dealService.updateApplicationStatus(applicationId, ApplicationStatus.DOCUMENTS_CREATED);
         return ResponseEntity.ok().build();
     }
+
+
 }

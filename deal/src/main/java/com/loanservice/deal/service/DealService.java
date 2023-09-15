@@ -16,6 +16,7 @@ public interface DealService {
 
     ApplicationDTO getApplicationDTOById(Long applicationId);
 
+    List<ApplicationDTO> getApplication();
     void updateApplicationStatus(Long applicationId, ApplicationStatus applicationStatus);
 
     void generateSesCode(Long applicationId);

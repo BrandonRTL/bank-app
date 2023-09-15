@@ -83,6 +83,20 @@ paths:
         400:
           description: Invalid input data
 
+  /deal/admin/application:
+    get:
+      summary: Get all applications
+      operationId: get applications
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Applications'
+        400:
+          description: Invalid input data
+
   /deal/admin/application/{applicationId}/status:
     put:
       summary: Update application status
@@ -353,6 +367,10 @@ components:
           $ref: "#/components/schemas/LoanOfferDTO"
         sesCode:
           type: string
+    Applications:
+      type: array
+      items:
+        $ref: "#/components/schemas/ApplicationDTO"
 
     EmailMessage:
       type: object
@@ -428,7 +446,6 @@ components:
         - Client denied
         - Document signed
         - Credit issued
-
 
     ChangeType:
       type: string
