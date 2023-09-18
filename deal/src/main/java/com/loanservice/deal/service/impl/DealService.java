@@ -25,6 +25,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Service
 @AllArgsConstructor
@@ -137,6 +139,14 @@ public class DealService implements com.loanservice.deal.service.DealService {
         }
         log.debug(application.toString());
         return applicationMapper.fromApplication(application.get());
+    }
+
+    @Override
+    public List<ApplicationDTO> getApplication() {
+        List<Application> applications = StreamSupport.stream(applicationRepository.findAll().spliterator(), false)
+                .collect(Collectors.toList());
+
+        return applicationMapper.fromList(applications);
     }
 
     @Override

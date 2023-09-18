@@ -6,7 +6,7 @@ info:
   description: 'Awesome description'
 
 paths:
-  /deal/application:
+  /gateway/application:
     post:
       summary: Get 4 loan offers
       operationId: prescore
@@ -25,8 +25,8 @@ paths:
         400:
           description: Invalid input data
 
-  /deal/offer:
-    put:
+  /gateway/application/apply:
+    post:
       summary: Save chosen offer
       operationId: save offer
       requestBody:
@@ -40,8 +40,8 @@ paths:
         400:
           description: Invalid input data
 
-  /deal/calculate/{applicationId}:
-    put:
+  /gateway/registration/{applicationId}:
+    post:
       summary: Finish registration
       operationId: finish registration
       parameters:
@@ -62,45 +62,10 @@ paths:
         400:
           description: Invalid input data
 
-  /deal/admin/application/{applicationId}:
-    get:
-      summary: Get application by id
-      operationId: get application
-      parameters:
-        - name: applicationId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApplicationDTO'
-        400:
-          description: Invalid input data
-
-  /deal/admin/application:
-    get:
-      summary: Get all applications
-      operationId: get applications
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Applications'
-        400:
-          description: Invalid input data
-
-  /deal/admin/application/{applicationId}/status:
-    put:
-      summary: Update application status
-      operationId: update application
+  /gateway/document/{applicationId}:
+    post:
+      summary: Create documents request
+      operationId: request documents
       parameters:
         - name: applicationId
           in: path
@@ -114,26 +79,9 @@ paths:
         400:
           description: Invalid input data
 
-  /deal/document/{applicationId}/send:
-    put:
-      summary: Document request
-      operationId: send documents
-      parameters:
-        - name: applicationId
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        200:
-          description: OK
-        400:
-          description: Invalid input data
-
-  /deal/document/{applicationId}/sign:
-    put:
-      summary: Sign request
+  /gateway/document/{applicationId}/sign:
+    post:
+      summary: Sign documents request
       operationId: sign documents
       parameters:
         - name: applicationId
@@ -148,9 +96,9 @@ paths:
         400:
           description: Invalid input data
 
-  /deal/document/{applicationId}/code:
-    put:
-      summary: Code request
+  /gateway/document/{applicationId}/sign/code:
+    post:
+      summary: Verify code
       operationId: verify code
       parameters:
         - name: applicationId
@@ -169,6 +117,45 @@ paths:
           description: OK
         400:
           description: Invalid input data
+
+#  /deal/document/{applicationId}/sign:
+#    put:
+#      summary: Sign request
+#      operationId: sign documents
+#      parameters:
+#        - name: applicationId
+#          in: path
+#          required: true
+#          schema:
+#            type: integer
+#            format: int64
+#      responses:
+#        200:
+#          description: OK
+#        400:
+#          description: Invalid input data
+#
+#  /deal/document/{applicationId}/code:
+#    put:
+#      summary: Code request
+#      operationId: verify code
+#      parameters:
+#        - name: applicationId
+#          in: path
+#          required: true
+#          schema:
+#            type: integer
+#            format: int64
+#      requestBody:
+#        content:
+#          application/json:
+#            schema:
+#              $ref: '#/components/schemas/SesCodeRequest'
+#      responses:
+#        200:
+#          description: OK
+#        400:
+#          description: Invalid input data
 
 components:
   schemas:
@@ -367,10 +354,6 @@ components:
           $ref: "#/components/schemas/LoanOfferDTO"
         sesCode:
           type: string
-    Applications:
-      type: array
-      items:
-        $ref: "#/components/schemas/ApplicationDTO"
 
     EmailMessage:
       type: object
@@ -446,6 +429,7 @@ components:
         - Client denied
         - Document signed
         - Credit issued
+
 
     ChangeType:
       type: string
